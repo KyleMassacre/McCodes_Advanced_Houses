@@ -1,0 +1,35 @@
+
+=============
+cron_run_day.php:
+=============
+
+find:
+------------
+?>
+
+add before:
+------------
+
+mysql_query("UPDATE `owned_houses` SET `uhouseRTime` = `uhouseRTime` - '1' WHERE `uhouseRTime` > '0'");
+$houses = mysql_query(sprintf("SELECT * FROM `owned_houses` LEFT JOIN `users` ON (`userid` = `uhouseTenant`) WHERE `uhouseTenant` > '0'"));
+while ($r = mysql_fetch_array($houses))
+{
+	$sql = $dbh->prepare("UPDATE users SET money=money-? where userid=?");
+	$sql->bindParam(1, $r['uhouseRent']);
+	$sql->bindParam(2, $r['uhouseTenant']);
+	$sql->execute();
+	
+	$sql = $dbh->prepare("UPDATE users SET money=money+? where userid=?");
+	$sql->bindParam(1, $r['uhouseRent']);
+	$sql->bindParam(2, $r['uhouseOwner']);
+	$sql->execute();	
+}
+$sql = $dbh->prepare("SELECT * FROM owned_houses WHERE uhouseTenant != '0' AND uhouseRTime <= 0");;
+$sql->execute();
+while ($result = $sql->fetch()) {
+	$sql2 = $dbh->prepare("update users set will=will-? where userid=?");;
+	$sql2->bindParam(1, $result['uhouseMood']);
+	$sql2->bindParam(2, $result['uhouseTenant']);
+	$sql2->execute();
+}
+mysql_query("UPDATE `owned_houses` SET `uhouseTenant` = '0', `uhouseRent` = '0' WHERE `uhouseRTime` <= '0'");
